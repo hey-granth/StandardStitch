@@ -1,9 +1,10 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
+from typing import Any, Dict
 from .models import User
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer[User]):
     class Meta:
         model = User
         fields = ["id", "email", "phone", "role", "is_active", "date_joined"]
@@ -18,17 +19,17 @@ class SignupSerializer(serializers.Serializer):
         choices=["parent", "vendor", "school_admin", "ops"], default="parent"
     )
 
-    def validate_email(self, value):
+    def validate_email(self, value: str) -> str:
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("Email already exists")
         return value
 
-    def validate_phone(self, value):
+    def validate_phone(self, value: str) -> str:
         if value and User.objects.filter(phone=value).exists():
             raise serializers.ValidationError("Phone number already exists")
         return value
 
-    def create(self, validated_data):
+    def create(self, validated_data: Dict[str, Any]) -> User:
         user = User.objects.create_user(
             email=validated_data["email"],
             password=validated_data["password"],
@@ -42,7 +43,7 @@ class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
 
-    def validate(self, data):
+    def validate(self, data: Dict[str, Any]) -> Dict[str, Any]:
         email = data.get("email")
         password = data.get("password")
 

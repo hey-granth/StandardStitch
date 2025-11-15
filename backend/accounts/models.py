@@ -6,10 +6,11 @@ from django.contrib.auth.models import (
 )
 from django.db import models
 from django.utils import timezone
+from typing import ClassVar, Optional, Any
 
 
-class UserManager(BaseUserManager):
-    def create_user(self, email, password=None, **extra_fields):
+class UserManager(BaseUserManager['User']):
+    def create_user(self, email: str, password: Optional[str] = None, **extra_fields: Any) -> 'User':
         if not email:
             raise ValueError("Email is required")
         email = self.normalize_email(email)
@@ -19,7 +20,7 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, password=None, **extra_fields):
+    def create_superuser(self, email: str, password: Optional[str] = None, **extra_fields: Any) -> 'User':
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("role", "ops")
@@ -34,6 +35,8 @@ class User(AbstractBaseUser, PermissionsMixin):
         ("ops", "Operations"),
     ]
 
+    objects: ClassVar[UserManager] = UserManager()
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(max_length=255, unique=True, db_index=True)
     phone = models.CharField(
@@ -47,8 +50,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     # Google OAuth fields
     google_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
 
-    objects = UserManager()
-
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["role"]
 
@@ -59,5 +60,5 @@ class User(AbstractBaseUser, PermissionsMixin):
             models.Index(fields=["phone"], name="idx_phone"),
         ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.email
