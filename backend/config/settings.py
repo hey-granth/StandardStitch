@@ -44,10 +44,12 @@ INSTALLED_APPS = [
     "django.contrib.postgres",
     "rest_framework",
     "rest_framework_simplejwt",
+    "silk",
     "accounts",
     "schools",
     "catalog",
     "vendors",
+    "checkout",
 ]
 
 MIDDLEWARE = [
@@ -58,6 +60,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "silk.middleware.SilkyMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
