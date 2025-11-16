@@ -4,7 +4,7 @@ from django.core.cache import cache
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
-from backend.schools.models import School
+from schools.models import School
 from .models import UniformSpec
 
 User = get_user_model()
