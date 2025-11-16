@@ -4,7 +4,14 @@ from .models import School
 
 @admin.register(School)
 class SchoolAdmin(admin.ModelAdmin):
-    list_display = ["name", "city", "board", "session_start", "session_end", "is_active"]
+    list_display = [
+        "name",
+        "city",
+        "board",
+        "session_start",
+        "session_end",
+        "is_active",
+    ]
     list_filter = ["city", "is_active", "board"]
     search_fields = ["name", "city"]
     ordering = ["name"]
@@ -16,4 +23,3 @@ class SchoolAdmin(admin.ModelAdmin):
         ("Status", {"fields": ("is_active",)}),
         ("Timestamps", {"fields": ("created_at", "updated_at")}),
     )
-

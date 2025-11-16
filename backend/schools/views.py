@@ -41,4 +41,3 @@ class SchoolViewSet(viewsets.ReadOnlyModelViewSet[School]):
         cache.set(cache_key, response.data, timeout=60 * 5)
 
         return response
-

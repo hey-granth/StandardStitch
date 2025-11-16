@@ -9,8 +9,10 @@ from django.utils import timezone
 from typing import ClassVar, Optional, Any
 
 
-class UserManager(BaseUserManager['User']):
-    def create_user(self, email: str, password: Optional[str] = None, **extra_fields: Any) -> 'User':
+class UserManager(BaseUserManager["User"]):
+    def create_user(
+        self, email: str, password: Optional[str] = None, **extra_fields: Any
+    ) -> "User":
         if not email:
             raise ValueError("Email is required")
         email = self.normalize_email(email)
@@ -20,7 +22,9 @@ class UserManager(BaseUserManager['User']):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email: str, password: Optional[str] = None, **extra_fields: Any) -> 'User':
+    def create_superuser(
+        self, email: str, password: Optional[str] = None, **extra_fields: Any
+    ) -> "User":
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("role", "ops")

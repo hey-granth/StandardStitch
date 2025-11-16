@@ -5,30 +5,39 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='School',
+            name="School",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('name', models.CharField(db_index=True, max_length=255)),
-                ('city', models.CharField(db_index=True, max_length=100)),
-                ('board', models.CharField(blank=True, max_length=100, null=True)),
-                ('session_start', models.DateField()),
-                ('session_end', models.DateField()),
-                ('is_active', models.BooleanField(default=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("name", models.CharField(db_index=True, max_length=255)),
+                ("city", models.CharField(db_index=True, max_length=100)),
+                ("board", models.CharField(blank=True, max_length=100, null=True)),
+                ("session_start", models.DateField()),
+                ("session_end", models.DateField()),
+                ("is_active", models.BooleanField(default=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'db_table': 'schools',
-                'ordering': ['name'],
-                'indexes': [models.Index(fields=['name'], name='idx_school_name'), models.Index(fields=['city'], name='idx_school_city')],
+                "db_table": "schools",
+                "ordering": ["name"],
+                "indexes": [
+                    models.Index(fields=["name"], name="idx_school_name"),
+                    models.Index(fields=["city"], name="idx_school_city"),
+                ],
             },
         ),
     ]

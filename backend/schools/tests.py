@@ -16,9 +16,7 @@ class SchoolTests(APITestCase):
         School.objects.all().delete()
 
         self.user = User.objects.create_user(
-            email="test@example.com",
-            password="password123",
-            role="parent"
+            email="test@example.com", password="password123", role="parent"
         )
         self.client.force_authenticate(user=self.user)
 
@@ -29,7 +27,7 @@ class SchoolTests(APITestCase):
             city="Mumbai",
             board="CBSE",
             session_start=date(2025, 4, 1),
-            session_end=date(2026, 3, 31)
+            session_end=date(2026, 3, 31),
         )
 
         self.assertEqual(school.name, "Test School")
@@ -43,13 +41,13 @@ class SchoolTests(APITestCase):
             name="School A",
             city="Mumbai",
             session_start=date(2025, 4, 1),
-            session_end=date(2026, 3, 31)
+            session_end=date(2026, 3, 31),
         )
         School.objects.create(
             name="School B",
             city="Delhi",
             session_start=date(2025, 4, 1),
-            session_end=date(2026, 3, 31)
+            session_end=date(2026, 3, 31),
         )
 
         url = reverse("school-list")
@@ -64,7 +62,7 @@ class SchoolTests(APITestCase):
             name="Test School",
             city="Mumbai",
             session_start=date(2025, 4, 1),
-            session_end=date(2026, 3, 31)
+            session_end=date(2026, 3, 31),
         )
 
         url = reverse("school-detail", kwargs={"pk": school.id})
@@ -80,13 +78,13 @@ class SchoolTests(APITestCase):
             name="School A",
             city="Mumbai",
             session_start=date(2025, 4, 1),
-            session_end=date(2026, 3, 31)
+            session_end=date(2026, 3, 31),
         )
         School.objects.create(
             name="School B",
             city="Delhi",
             session_start=date(2025, 4, 1),
-            session_end=date(2026, 3, 31)
+            session_end=date(2026, 3, 31),
         )
 
         url = reverse("school-list")
@@ -102,13 +100,13 @@ class SchoolTests(APITestCase):
             name="Zebra School",
             city="Mumbai",
             session_start=date(2025, 4, 1),
-            session_end=date(2026, 3, 31)
+            session_end=date(2026, 3, 31),
         )
         School.objects.create(
             name="Alpha School",
             city="Mumbai",
             session_start=date(2025, 4, 1),
-            session_end=date(2026, 3, 31)
+            session_end=date(2026, 3, 31),
         )
 
         url = reverse("school-list")
@@ -126,4 +124,3 @@ class SchoolTests(APITestCase):
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-

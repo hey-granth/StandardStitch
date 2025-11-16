@@ -8,4 +8,3 @@ router.register(r"schools", SchoolViewSet, basename="school")
 urlpatterns = [
     path("", include(router.urls)),
 ]
-

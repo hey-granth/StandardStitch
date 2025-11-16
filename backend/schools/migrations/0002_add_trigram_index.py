@@ -5,19 +5,18 @@ from django.db import migrations, connection
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('schools', '0001_initial'),
+        ("schools", "0001_initial"),
     ]
 
     operations = []
 
     # Only add trigram index for PostgreSQL
-    if connection.vendor == 'postgresql':
+    if connection.vendor == "postgresql":
         operations = [
             TrigramExtension(),
             migrations.RunSQL(
-                sql='CREATE INDEX idx_school_name_trgm ON schools USING gin (name gin_trgm_ops);',
-                reverse_sql='DROP INDEX IF EXISTS idx_school_name_trgm;'
+                sql="CREATE INDEX idx_school_name_trgm ON schools USING gin (name gin_trgm_ops);",
+                reverse_sql="DROP INDEX IF EXISTS idx_school_name_trgm;",
             ),
         ]
