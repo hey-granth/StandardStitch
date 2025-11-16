@@ -11,20 +11,24 @@ User = get_user_model()
 
 
 class CatalogTests(APITestCase):
-    def setUp(self):
-        cache.clear()
-
-        self.user = User.objects.create_user(
+    @classmethod
+    def setUpTestData(cls):
+        """Create shared test data once per test class"""
+        cls.user = User.objects.create_user(
             email="test@example.com", password="password123", role="parent"
         )
-        self.client.force_authenticate(user=self.user)
 
-        self.school = School.objects.create(
+        cls.school = School.objects.create(
             name="Test School",
             city="Mumbai",
             session_start=date(2025, 4, 1),
             session_end=date(2026, 3, 31),
         )
+
+    def setUp(self):
+        """Per-test setup"""
+        cache.clear()
+        self.client.force_authenticate(user=self.user)
 
     def test_create_uniform_spec(self):
         """Test creating a UniformSpec instance"""

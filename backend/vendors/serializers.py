@@ -1,8 +1,45 @@
 from decimal import Decimal
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from rest_framework import serializers
 from django.utils import timezone
+from django.core.cache import cache
 from .models import Vendor, VendorApproval, Listing, PricePolicy
+
+
+def get_price_policy_cached(school_id: str) -> Optional[Decimal]:
+    """Cache price policy lookup for 5 minutes"""
+    cache_key = f"price_policy:{school_id}"
+    max_markup = cache.get(cache_key)
+    if max_markup is None:
+        try:
+            policy = PricePolicy.objects.only("max_markup_pct").get(school_id=school_id)
+            max_markup = policy.max_markup_pct
+        except PricePolicy.DoesNotExist:
+            max_markup = Decimal("30.00")
+        cache.set(cache_key, max_markup, timeout=300)
+    return max_markup
+
+
+def get_vendor_approval_cached(
+    vendor_id: str, school_id: str
+) -> Optional[VendorApproval]:
+    """Cache vendor approval lookup for 5 minutes"""
+    cache_key = f"approval:{vendor_id}:{school_id}"
+    approval_data = cache.get(cache_key)
+    if approval_data is None:
+        approval = (
+            VendorApproval.objects.filter(
+                vendor_id=vendor_id, school_id=school_id, status="approved"
+            )
+            .only("expires_at")
+            .first()
+        )
+        approval_data = {
+            "exists": approval is not None,
+            "expires_at": approval.expires_at if approval else None,
+        }
+        cache.set(cache_key, approval_data, timeout=300)
+    return approval_data
 
 
 class VendorSerializer(serializers.ModelSerializer[Vendor]):
@@ -70,39 +107,30 @@ class ListingSerializer(serializers.ModelSerializer[Listing]):
         base_price = data.get("base_price")
         mrp = data.get("mrp")
 
-        # Check vendor is active
         if not vendor.is_active:
             raise serializers.ValidationError(
                 "Vendor must be active to create listings"
             )
 
-        # Check vendor has approval for school
-        approval = VendorApproval.objects.filter(
-            vendor=vendor, school=school, status="approved"
-        ).first()
+        # Use cached approval lookup
+        approval_data = get_vendor_approval_cached(str(vendor.id), str(school.id))
 
-        if not approval:
+        if not approval_data["exists"]:
             raise serializers.ValidationError("Vendor must be approved for this school")
 
-        # Check approval expiry
-        if approval.expires_at and approval.expires_at < timezone.now().date():
+        if (
+            approval_data["expires_at"]
+            and approval_data["expires_at"] < timezone.now().date()
+        ):
             raise serializers.ValidationError("Vendor approval has expired")
 
-        # Check spec exists and belongs to school
         if spec.school_id != school.id:
             raise serializers.ValidationError(
                 "Spec must belong to the specified school"
             )
 
-        # Validate price cap
-        try:
-            price_policy = PricePolicy.objects.get(school=school)
-        except PricePolicy.DoesNotExist:
-            # Default policy if none exists
-            max_markup_pct = Decimal("30.00")
-        else:
-            max_markup_pct = price_policy.max_markup_pct
-
+        # Use cached price policy lookup
+        max_markup_pct = get_price_policy_cached(str(school.id))
         max_allowed_mrp = base_price * (Decimal("1") + max_markup_pct / Decimal("100"))
         if mrp > max_allowed_mrp:
             raise serializers.ValidationError(

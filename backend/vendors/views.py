@@ -46,7 +46,11 @@ def create_listing(request: Request) -> Response:
         )
 
     # Check for existing listing with same idempotency key
-    existing = Listing.objects.filter(idempotency_key=idempotency_key).first()
+    existing = (
+        Listing.objects.filter(idempotency_key=idempotency_key)
+        .select_related("vendor", "school", "spec")
+        .first()
+    )
     if existing:
         serializer = ListingSerializer(existing)
         return Response(serializer.data, status=status.HTTP_200_OK)

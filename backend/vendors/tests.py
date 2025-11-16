@@ -12,21 +12,22 @@ User = get_user_model()
 
 
 class VendorTests(APITestCase):
-    def setUp(self):
-        self.user = User.objects.create_user(
+    @classmethod
+    def setUpTestData(cls):
+        """Create shared test data once per test class"""
+        cls.user = User.objects.create_user(
             email="test@example.com", password="password123", role="parent"
         )
-        self.client.force_authenticate(user=self.user)
 
-        self.school = School.objects.create(
+        cls.school = School.objects.create(
             name="Test School",
             city="Mumbai",
             session_start=date(2025, 4, 1),
             session_end=date(2026, 3, 31),
         )
 
-        self.spec = UniformSpec.objects.create(
-            school=self.school,
+        cls.spec = UniformSpec.objects.create(
+            school=cls.school,
             item_type="shirt",
             gender="boys",
             season="summer",
@@ -34,6 +35,25 @@ class VendorTests(APITestCase):
             pantone="PMS 287C",
             measurements={},
         )
+
+        cls.vendor = Vendor.objects.create(
+            name="Test Vendor", city="Mumbai", is_active=True
+        )
+
+        cls.approval = VendorApproval.objects.create(
+            vendor=cls.vendor,
+            school=cls.school,
+            status="approved",
+            expires_at=date.today() + timedelta(days=365),
+        )
+
+        cls.price_policy = PricePolicy.objects.create(
+            school=cls.school, max_markup_pct=Decimal("30.00")
+        )
+
+    def setUp(self):
+        """Per-test setup"""
+        self.client.force_authenticate(user=self.user)
 
     def test_vendor_apply(self):
         """Test vendor application"""
@@ -59,24 +79,9 @@ class VendorTests(APITestCase):
 
     def test_create_listing_valid_price(self):
         """Test creating listing with valid pricing"""
-        vendor = Vendor.objects.create(
-            name="Test Vendor", city="Mumbai", is_active=True
-        )
-
-        # Create approval
-        VendorApproval.objects.create(
-            vendor=vendor,
-            school=self.school,
-            status="approved",
-            expires_at=date.today() + timedelta(days=365),
-        )
-
-        # Create price policy
-        PricePolicy.objects.create(school=self.school, max_markup_pct=Decimal("30.00"))
-
         url = reverse("listing-create")
         data = {
-            "vendor": str(vendor.id),
+            "vendor": str(self.vendor.id),
             "school": str(self.school.id),
             "spec": str(self.spec.id),
             "sku": "SHIRT-001",
@@ -96,22 +101,9 @@ class VendorTests(APITestCase):
 
     def test_create_listing_invalid_price(self):
         """Test creating listing with invalid pricing (exceeds cap)"""
-        vendor = Vendor.objects.create(
-            name="Test Vendor", city="Mumbai", is_active=True
-        )
-
-        VendorApproval.objects.create(
-            vendor=vendor,
-            school=self.school,
-            status="approved",
-            expires_at=date.today() + timedelta(days=365),
-        )
-
-        PricePolicy.objects.create(school=self.school, max_markup_pct=Decimal("30.00"))
-
         url = reverse("listing-create")
         data = {
-            "vendor": str(vendor.id),
+            "vendor": str(self.vendor.id),
             "school": str(self.school.id),
             "spec": str(self.spec.id),
             "sku": "SHIRT-002",
@@ -184,19 +176,9 @@ class VendorTests(APITestCase):
 
     def test_idempotency(self):
         """Test idempotency key works"""
-        vendor = Vendor.objects.create(
-            name="Test Vendor", city="Mumbai", is_active=True
-        )
-
-        VendorApproval.objects.create(
-            vendor=vendor, school=self.school, status="approved"
-        )
-
-        PricePolicy.objects.create(school=self.school, max_markup_pct=Decimal("30.00"))
-
         url = reverse("listing-create")
         data = {
-            "vendor": str(vendor.id),
+            "vendor": str(self.vendor.id),
             "school": str(self.school.id),
             "spec": str(self.spec.id),
             "sku": "SHIRT-005",
@@ -221,16 +203,8 @@ class VendorTests(APITestCase):
 
     def test_vendor_listings(self):
         """Test getting vendor listings"""
-        vendor = Vendor.objects.create(
-            name="Test Vendor", city="Mumbai", is_active=True
-        )
-
-        VendorApproval.objects.create(
-            vendor=vendor, school=self.school, status="approved"
-        )
-
         listing = Listing.objects.create(
-            vendor=vendor,
+            vendor=self.vendor,
             school=self.school,
             spec=self.spec,
             sku="SHIRT-006",
@@ -239,7 +213,7 @@ class VendorTests(APITestCase):
             lead_time_days=7,
         )
 
-        url = reverse("vendor-listings", kwargs={"vendor_id": vendor.id})
+        url = reverse("vendor-listings", kwargs={"vendor_id": self.vendor.id})
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -248,13 +222,9 @@ class VendorTests(APITestCase):
 
     def test_missing_idempotency_key(self):
         """Test that missing idempotency key returns error"""
-        vendor = Vendor.objects.create(
-            name="Test Vendor", city="Mumbai", is_active=True
-        )
-
         url = reverse("listing-create")
         data = {
-            "vendor": str(vendor.id),
+            "vendor": str(self.vendor.id),
             "school": str(self.school.id),
             "spec": str(self.spec.id),
             "sku": "SHIRT-007",

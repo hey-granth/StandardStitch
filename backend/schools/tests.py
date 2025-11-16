@@ -10,14 +10,16 @@ User = get_user_model()
 
 
 class SchoolTests(APITestCase):
-    def setUp(self):
-        # Clear cache and existing schools for test isolation
-        cache.clear()
-        School.objects.all().delete()
-
-        self.user = User.objects.create_user(
+    @classmethod
+    def setUpTestData(cls):
+        """Create shared test data once per test class"""
+        cls.user = User.objects.create_user(
             email="test@example.com", password="password123", role="parent"
         )
+
+    def setUp(self):
+        """Per-test setup"""
+        cache.clear()
         self.client.force_authenticate(user=self.user)
 
     def test_create_school(self):

@@ -6,10 +6,12 @@ django==5.2.8
 django-allauth==65.13.0
 django-filter==25.2
 django-redis==6.0.0
+django-silk==5.4.3
 djangorestframework==3.16.1
 djangorestframework-simplejwt==5.5.1
 google-auth==2.43.0
 google-auth-oauthlib==1.2.2
+gprof2dot==2025.4.14
 idna==3.11
 iniconfig==2.3.0
 oauthlib==3.3.1
