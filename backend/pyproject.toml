@@ -8,6 +8,7 @@ dependencies = [
     "django>=5.2.8",
     "django-silk>=5.4.3",
     "djangorestframework>=3.16.1",
+    "pyjwt>=2.10.1",
     "pytest>=9.0.1",
     "python-dotenv>=1.2.1",
     "ruff>=0.14.5",

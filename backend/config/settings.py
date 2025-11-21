@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from dotenv import load_dotenv
+from urllib.parse import urlparse, parse_qsl
 import os
 
 load_dotenv()
@@ -45,6 +46,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "silk",
+    "config",  # For management commands
     "accounts",
     "schools",
     "catalog",
@@ -86,12 +88,40 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+DATABASE_URL: str | None = os.getenv("DATABASE_URL")
+TEST_DATABASE_URL: str | None = os.getenv("TEST_DATABASE_URL")
+
+# Production and development use Neon via DATABASE_URL
+parsed_db = urlparse(DATABASE_URL or "")
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": parsed_db.path.replace("/", ""),
+        "USER": parsed_db.username,
+        "PASSWORD": parsed_db.password,
+        "HOST": parsed_db.hostname,
+        "PORT": parsed_db.port or 5432,
+        "OPTIONS": dict(parse_qsl(parsed_db.query)),
     }
 }
+
+# Tests ALWAYS use local Postgres via TEST_DATABASE_URL
+# Tests NEVER connect to Neon
+if TEST_DATABASE_URL:
+    parsed_test = urlparse(TEST_DATABASE_URL)
+    DATABASES["default"]["TEST"] = {
+        "NAME": parsed_test.path.replace("/", ""),
+        "USER": parsed_test.username,
+        "PASSWORD": parsed_test.password,
+        "HOST": parsed_test.hostname,
+        "PORT": parsed_test.port or 5432,
+        "MIRROR": None,
+    }
+else:
+    raise ValueError(
+        "TEST_DATABASE_URL must be set to a local Postgres instance. "
+        "Tests must never connect to Neon."
+    )
 
 
 # Password validation
@@ -137,6 +167,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Custom user model
 AUTH_USER_MODEL = "accounts.User"
+
+# Test runner
+TEST_RUNNER = "config.test_runner.PostgresTestRunner"
 
 # REST Framework settings
 REST_FRAMEWORK = {

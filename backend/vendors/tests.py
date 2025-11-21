@@ -16,7 +16,7 @@ class VendorTests(APITestCase):
     def setUpTestData(cls):
         """Create shared test data once per test class"""
         cls.user = User.objects.create_user(
-            email="test@example.com", password="password123", role="parent"
+            email="test@example.com", password="password123", role="vendor"
         )
 
         cls.school = School.objects.create(
@@ -37,7 +37,11 @@ class VendorTests(APITestCase):
         )
 
         cls.vendor = Vendor.objects.create(
-            name="Test Vendor", city="Mumbai", is_active=True
+            name="Test Vendor",
+            city="Mumbai",
+            is_active=True,
+            status="approved",
+            user=cls.user,
         )
 
         cls.approval = VendorApproval.objects.create(
@@ -172,7 +176,7 @@ class VendorTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("active", str(response.data).lower())
+        self.assertIn("approved", str(response.data).lower())
 
     def test_idempotency(self):
         """Test idempotency key works"""
