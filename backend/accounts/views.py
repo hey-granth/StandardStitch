@@ -65,7 +65,6 @@ def google_auth(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     token = serializer.validated_data["token"]
-    role = serializer.validated_data.get("role", "parent")
 
     try:
         # Verify Google token
@@ -82,7 +81,7 @@ def google_auth(request):
             email=email,
             defaults={
                 "google_id": google_id,
-                "role": role,
+                "role": "parent",  # Always default to parent
             },
         )
 

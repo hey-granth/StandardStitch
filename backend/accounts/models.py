@@ -66,3 +66,12 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self) -> str:
         return self.email
+
+    def is_vendor(self) -> bool:
+        return self.role == "vendor"
+
+    def is_school_admin(self) -> bool:
+        return self.role == "school_admin"
+
+    def is_ops(self) -> bool:
+        return self.role == "ops"

@@ -1,20 +1,44 @@
 import uuid
 from decimal import Decimal
-from typing import ClassVar, Literal, Optional
+from typing import ClassVar
 from django.db import models
 from django.core.validators import MinValueValidator
+from django.conf import settings
 
 
 class Vendor(models.Model):
+    STATUS_CHOICES: list[tuple[str, str]] = [
+        ("pending", "Pending"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+    ]
+
     objects: ClassVar[models.Manager]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=255)
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="vendor_profile",
+        null=True,
+        blank=True,
+    )
+    gst_number = models.CharField(
+        max_length=15, unique=True, db_index=True, null=True, blank=True
+    )
+    official_name = models.CharField(max_length=255, blank=True, default="")
+    email = models.EmailField(max_length=255, blank=True, default="")
+    phone = models.CharField(max_length=15, blank=True, default="")
     city = models.CharField(max_length=100)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+
+    # Legacy fields (keep for backward compatibility)
+    name = models.CharField(max_length=255, blank=True, default="")
     gstin = models.CharField(max_length=15, null=True, blank=True)
     verification_level = models.IntegerField(default=0)
     payout_info = models.JSONField(default=dict)
     is_active = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -22,10 +46,12 @@ class Vendor(models.Model):
         db_table = "vendors"
         indexes = [
             models.Index(fields=["city", "is_active"], name="idx_vendor_city_active"),
+            models.Index(fields=["status"], name="idx_vendor_status"),
+            models.Index(fields=["gst_number"], name="idx_vendor_gst"),
         ]
 
     def __str__(self) -> str:
-        return self.name
+        return self.official_name or self.name
 
 
 class VendorApproval(models.Model):

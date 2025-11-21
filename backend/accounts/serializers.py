@@ -8,16 +8,13 @@ class UserSerializer(serializers.ModelSerializer[User]):
     class Meta:
         model = User
         fields = ["id", "email", "phone", "role", "is_active", "date_joined"]
-        read_only_fields = ["id", "date_joined"]
+        read_only_fields = ["id", "role", "date_joined"]
 
 
 class SignupSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, min_length=8)
     phone = serializers.CharField(max_length=15, required=False, allow_blank=True)
-    role = serializers.ChoiceField(
-        choices=["parent", "vendor", "school_admin", "ops"], default="parent"
-    )
 
     def validate_email(self, value: str) -> str:
         if User.objects.filter(email=value).exists():
@@ -34,7 +31,7 @@ class SignupSerializer(serializers.Serializer):
             email=validated_data["email"],
             password=validated_data["password"],
             phone=validated_data.get("phone") or None,
-            role=validated_data.get("role", "parent"),
+            role="parent",  # Always default to parent
         )
         return user
 
@@ -62,8 +59,3 @@ class LoginSerializer(serializers.Serializer):
 
 class GoogleAuthSerializer(serializers.Serializer):
     token = serializers.CharField()
-    role = serializers.ChoiceField(
-        choices=["parent", "vendor", "school_admin", "ops"],
-        default="parent",
-        required=False,
-    )
