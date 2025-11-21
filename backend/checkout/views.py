@@ -10,7 +10,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.core.cache import cache
 from vendors.models import Listing
-from .models import Cart, CartItem, Payment
+from .models import Cart, CartItem, Payment, Order, OrderItem
 from .serializers import (
     CartSerializer,
     CartItemSerializer,
@@ -185,10 +185,32 @@ def payment_webhook(request: Request) -> Response:
     # Cache webhook to prevent duplicates
     cache.set(cache_key, True, timeout=600)
 
-    # Stub: Trigger order creation if paid
+    # Create order if paid
     if new_status == "paid":
-        # TODO: Create order from cart
-        pass
+        cart_id = payment.raw_payload.get("cart_id")
+        if cart_id and not hasattr(payment, "order"):
+            cart = Cart.objects.prefetch_related(
+                "items__listing__vendor", "items__listing__school"
+            ).get(id=cart_id)
+
+            # Create order
+            order = Order.objects.create(
+                user=cart.user, payment=payment, total_amount=payment.amount
+            )
+
+            # Create order items from cart items
+            for cart_item in cart.items.all():
+                OrderItem.objects.create(
+                    order=order,
+                    listing=cart_item.listing,
+                    qty=cart_item.qty,
+                    unit_price=cart_item.listing.mrp,
+                    subtotal=cart_item.listing.mrp * cart_item.qty,
+                )
+
+            # Update order status
+            order.status = "confirmed"
+            order.save(update_fields=["status", "updated_at"])
 
     return Response(
         {

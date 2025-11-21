@@ -78,3 +78,64 @@ class Payment(models.Model):
 
     def __str__(self) -> str:
         return f"Payment {self.provider_ref} - {self.status}"
+
+
+class Order(models.Model):
+    objects: ClassVar[models.Manager]
+
+    STATUS_CHOICES: list[tuple[str, str]] = [
+        ("pending", "Pending"),
+        ("confirmed", "Confirmed"),
+        ("cancelled", "Cancelled"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="orders"
+    )
+    payment = models.OneToOneField(
+        "Payment", on_delete=models.PROTECT, related_name="order", null=True
+    )
+    total_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal("0.01"))]
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "orders"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["user", "status"], name="idx_order_user_status"),
+        ]
+
+    def __str__(self) -> str:
+        return f"Order {self.id} - {self.user.email}"
+
+
+class OrderItem(models.Model):
+    objects: ClassVar[models.Manager]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    order = models.ForeignKey("Order", on_delete=models.CASCADE, related_name="items")
+    listing = models.ForeignKey(
+        "vendors.Listing", on_delete=models.PROTECT, related_name="order_items"
+    )
+    qty = models.IntegerField(validators=[MinValueValidator(1)])
+    unit_price = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal("0.01"))]
+    )
+    subtotal = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal("0.01"))]
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "order_items"
+        indexes = [
+            models.Index(fields=["order", "listing"], name="idx_order_item"),
+        ]
+
+    def __str__(self) -> str:
+        return f"OrderItem {self.listing.sku} x{self.qty}"
