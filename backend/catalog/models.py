@@ -31,6 +31,9 @@ class UniformSpec(models.Model):
                 fields=["school", "item_type", "version"],
                 name="idx_school_item_version",
             ),
+            models.Index(fields=["item_type"], name="idx_spec_item_type"),
+            # idx_spec_gender created in 0002_add_performance_indexes migration
+            models.Index(fields=["school", "frozen"], name="idx_school_frozen"),
         ]
 
     def __str__(self) -> str:

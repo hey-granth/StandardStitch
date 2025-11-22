@@ -28,9 +28,39 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG")
+DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes")
 
 ALLOWED_HOSTS = []
+
+# Test optimizations
+import sys
+TESTING = 'test' in sys.argv or 'pytest' in sys.modules
+
+if TESTING:
+    # Disable DEBUG during tests for performance
+    DEBUG = False
+
+    # Disable query logging during tests
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': True,
+        'handlers': {
+            'null': {
+                'class': 'logging.NullHandler',
+            },
+        },
+        'loggers': {
+            'django.db.backends': {
+                'handlers': ['null'],
+                'propagate': False,
+            },
+        },
+    }
+
+    # Use faster password hasher for tests
+    PASSWORD_HASHERS = [
+        'django.contrib.auth.hashers.MD5PasswordHasher',
+    ]
 
 
 # Application definition
@@ -62,8 +92,11 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "silk.middleware.SilkyMiddleware",
 ]
+
+# Only enable Silk profiling when not testing
+if not TESTING:
+    MIDDLEWARE.append("silk.middleware.SilkyMiddleware")
 
 ROOT_URLCONF = "config.urls"
 
@@ -105,23 +138,6 @@ DATABASES = {
     }
 }
 
-# Tests ALWAYS use local Postgres via TEST_DATABASE_URL
-# Tests NEVER connect to Neon
-if TEST_DATABASE_URL:
-    parsed_test = urlparse(TEST_DATABASE_URL)
-    DATABASES["default"]["TEST"] = {
-        "NAME": parsed_test.path.replace("/", ""),
-        "USER": parsed_test.username,
-        "PASSWORD": parsed_test.password,
-        "HOST": parsed_test.hostname,
-        "PORT": parsed_test.port or 5432,
-        "MIRROR": None,
-    }
-else:
-    raise ValueError(
-        "TEST_DATABASE_URL must be set to a local Postgres instance. "
-        "Tests must never connect to Neon."
-    )
 
 
 # Password validation
@@ -211,3 +227,23 @@ SIMPLE_JWT = {
 
 # Google OAuth
 GOOGLE_OAUTH_CLIENT_ID = None  # Set in environment variables for production
+
+# Override database configuration during tests
+# Tests ALWAYS use local Postgres via TEST_DATABASE_URL and NEVER connect to Neon
+import sys
+if "test" in sys.argv:
+    if not TEST_DATABASE_URL:
+        raise ValueError(
+            "TEST_DATABASE_URL must be set to a local Postgres instance. "
+            "Tests must never connect to Neon."
+        )
+    parsed_test = urlparse(TEST_DATABASE_URL)
+    DATABASES["default"] = {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": parsed_test.path.replace("/", ""),
+        "USER": parsed_test.username,
+        "PASSWORD": parsed_test.password,
+        "HOST": parsed_test.hostname,
+        "PORT": parsed_test.port or 5432,
+    }
+

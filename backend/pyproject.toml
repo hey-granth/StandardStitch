@@ -12,4 +12,5 @@ dependencies = [
     "pytest>=9.0.1",
     "python-dotenv>=1.2.1",
     "ruff>=0.14.5",
+    "testcontainers>=4.13.3",
 ]

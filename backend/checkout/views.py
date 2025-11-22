@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.request import Request
 from django.db import transaction
+
 from django.shortcuts import get_object_or_404
 from django.core.cache import cache
 from vendors.models import Listing
@@ -21,8 +22,8 @@ from .serializers import (
 
 
 def get_or_create_cart(user) -> Cart:
-    """Get user's active cart or create new one"""
-    cart = Cart.objects.filter(user=user).order_by("-updated_at").first()
+    """Get user's active cart or create new one (optimized)"""
+    cart = Cart.objects.filter(user=user).only("id", "user_id", "updated_at").order_by("-updated_at").first()
     if not cart:
         cart = Cart.objects.create(user=user)
     return cart
@@ -39,9 +40,9 @@ def add_cart_item(request: Request) -> Response:
     listing_id = serializer.validated_data["listing"]
     qty = serializer.validated_data["qty"]
 
-    # Verify listing exists and is enabled
+    # Verify listing exists and is enabled (minimal fields)
     listing = get_object_or_404(
-        Listing.objects.select_related("vendor", "school", "spec"),
+        Listing.objects.only("id", "enabled"),
         id=listing_id,
         enabled=True,
     )
@@ -50,8 +51,13 @@ def add_cart_item(request: Request) -> Response:
 
     # Update or create cart item
     cart_item, created = CartItem.objects.update_or_create(
-        cart=cart, listing=listing, defaults={"qty": qty}
+        cart=cart, listing_id=listing_id, defaults={"qty": qty}
     )
+
+    # Reload with relations for serializer
+    cart_item = CartItem.objects.select_related(
+        "listing__vendor", "listing__school"
+    ).get(id=cart_item.id)
 
     response_serializer = CartItemSerializer(cart_item)
     return Response(
@@ -195,22 +201,21 @@ def payment_webhook(request: Request) -> Response:
 
             # Create order
             order = Order.objects.create(
-                user=cart.user, payment=payment, total_amount=payment.amount
+                user=cart.user, payment=payment, total_amount=payment.amount, status="confirmed"
             )
 
-            # Create order items from cart items
-            for cart_item in cart.items.all():
-                OrderItem.objects.create(
+            # Create order items in bulk for performance
+            order_items = [
+                OrderItem(
                     order=order,
                     listing=cart_item.listing,
                     qty=cart_item.qty,
                     unit_price=cart_item.listing.mrp,
                     subtotal=cart_item.listing.mrp * cart_item.qty,
                 )
-
-            # Update order status
-            order.status = "confirmed"
-            order.save(update_fields=["status", "updated_at"])
+                for cart_item in cart.items.all()
+            ]
+            OrderItem.objects.bulk_create(order_items)
 
     return Response(
         {

@@ -22,7 +22,13 @@ class CatalogViewSet(viewsets.ReadOnlyModelViewSet[UniformSpec]):
 
     def get_queryset(self):
         school_id = self.kwargs.get("school_id")
-        return UniformSpec.objects.filter(school_id=school_id).select_related("school")
+        # select_related already applied - school is always needed for serializer
+        return UniformSpec.objects.filter(school_id=school_id).select_related("school").only(
+            "id", "school_id", "item_type", "gender", "season",
+            "fabric_gsm", "pantone", "measurements", "frozen",
+            "version", "created_at", "updated_at",
+            "school__name"  # Only load school name for serializer
+        )
 
     def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         school_id = kwargs.get("school_id")

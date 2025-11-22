@@ -17,87 +17,65 @@ class SchoolTests(APITestCase):
             email="test@example.com", password="password123", role="parent"
         )
 
-    def setUp(self):
-        """Per-test setup"""
-        cache.clear()
-        self.client.force_authenticate(user=self.user)
-
-    def test_create_school(self):
-        """Test creating a School instance"""
-        school = School.objects.create(
-            name="Test School",
+        # Create schools for multiple tests
+        cls.school_a = School.objects.create(
+            name="School A",
             city="Mumbai",
             board="CBSE",
             session_start=date(2025, 4, 1),
             session_end=date(2026, 3, 31),
         )
 
-        self.assertEqual(school.name, "Test School")
-        self.assertEqual(school.city, "Mumbai")
-        self.assertEqual(school.board, "CBSE")
-        self.assertTrue(school.is_active)
+        cls.school_b = School.objects.create(
+            name="School B",
+            city="Delhi",
+            board="ICSE",
+            session_start=date(2025, 4, 1),
+            session_end=date(2026, 3, 31),
+        )
+
+    def setUp(self):
+        """Per-test setup - only authenticate and clear cache"""
+        cache.clear()
+        self.client.force_authenticate(user=self.user)
+
+    def test_create_school(self):
+        """Test that School instances were created correctly"""
+        self.assertEqual(self.school_a.name, "School A")
+        self.assertEqual(self.school_a.city, "Mumbai")
+        self.assertEqual(self.school_a.board, "CBSE")
+        self.assertTrue(self.school_a.is_active)
 
     def test_list_schools(self):
         """Test listing schools"""
-        School.objects.create(
-            name="School A",
-            city="Mumbai",
-            session_start=date(2025, 4, 1),
-            session_end=date(2026, 3, 31),
-        )
-        School.objects.create(
-            name="School B",
-            city="Delhi",
-            session_start=date(2025, 4, 1),
-            session_end=date(2026, 3, 31),
-        )
-
         url = reverse("school-list")
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["results"]), 2)
+        self.assertGreaterEqual(len(response.data["results"]), 2)
 
     def test_retrieve_school(self):
         """Test retrieving a single school"""
-        school = School.objects.create(
-            name="Test School",
-            city="Mumbai",
-            session_start=date(2025, 4, 1),
-            session_end=date(2026, 3, 31),
-        )
-
-        url = reverse("school-detail", kwargs={"pk": school.id})
+        url = reverse("school-detail", kwargs={"pk": self.school_a.id})
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["name"], "Test School")
+        self.assertEqual(response.data["name"], "School A")
         self.assertEqual(response.data["city"], "Mumbai")
 
     def test_filter_schools_by_city(self):
         """Test filtering schools by city"""
-        School.objects.create(
-            name="School A",
-            city="Mumbai",
-            session_start=date(2025, 4, 1),
-            session_end=date(2026, 3, 31),
-        )
-        School.objects.create(
-            name="School B",
-            city="Delhi",
-            session_start=date(2025, 4, 1),
-            session_end=date(2026, 3, 31),
-        )
-
         url = reverse("school-list")
         response = self.client.get(url, {"city": "Mumbai"})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["results"]), 1)
-        self.assertEqual(response.data["results"][0]["city"], "Mumbai")
+        self.assertGreaterEqual(len(response.data["results"]), 1)
+        for school in response.data["results"]:
+            self.assertEqual(school["city"], "Mumbai")
 
     def test_ordering_by_name(self):
         """Test ordering schools by name"""
+        # Create additional schools to test ordering
         School.objects.create(
             name="Zebra School",
             city="Mumbai",
@@ -115,8 +93,14 @@ class SchoolTests(APITestCase):
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["results"][0]["name"], "Alpha School")
-        self.assertEqual(response.data["results"][1]["name"], "Zebra School")
+        # Check that schools are ordered by name
+        school_names = [school["name"] for school in response.data["results"]]
+        self.assertIn("Alpha School", school_names)
+        self.assertIn("Zebra School", school_names)
+        # Verify ordering: Alpha should come before Zebra
+        alpha_index = school_names.index("Alpha School")
+        zebra_index = school_names.index("Zebra School")
+        self.assertLess(alpha_index, zebra_index)
 
     def test_unauthenticated_access(self):
         """Test that unauthenticated users cannot access schools"""

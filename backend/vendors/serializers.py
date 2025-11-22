@@ -171,13 +171,23 @@ class ListingSerializer(serializers.ModelSerializer[Listing]):
         base_price = data.get("base_price")
         mrp = data.get("mrp")
 
-        # Check vendor status is approved
-        if vendor.status != "approved":
+        # Only fetch vendor status if vendor is not already loaded with these fields
+        if vendor and (not hasattr(vendor, 'status') or not hasattr(vendor, 'is_active')):
+            # Reload vendor with minimal fields
+            from .models import Vendor
+            vendor_data = Vendor.objects.only("status", "is_active").get(id=vendor.id if hasattr(vendor, 'id') else vendor)
+            vendor_status = vendor_data.status
+            vendor_active = vendor_data.is_active
+        else:
+            vendor_status = vendor.status
+            vendor_active = vendor.is_active
+
+        if vendor_status != "approved":
             raise serializers.ValidationError(
                 "Only approved vendors can create listings"
             )
 
-        if not vendor.is_active:
+        if not vendor_active:
             raise serializers.ValidationError(
                 "Vendor must be active to create listings"
             )

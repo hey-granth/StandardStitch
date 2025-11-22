@@ -40,8 +40,11 @@ class CartSerializer(serializers.ModelSerializer[Cart]):
         read_only_fields = ["id", "user", "created_at", "updated_at"]
 
     def get_total_amount(self, obj: Cart) -> Decimal:
+        """Compute total from prefetched items to avoid N+1"""
         total = Decimal("0")
-        for item in obj.items.all():
+        # Use prefetch_related data if available
+        items = obj.items.all() if hasattr(obj, '_prefetched_objects_cache') else obj.items.select_related('listing')
+        for item in items:
             total += item.listing.mrp * item.qty
         return total
 

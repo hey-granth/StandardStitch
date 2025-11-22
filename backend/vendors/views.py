@@ -129,7 +129,8 @@ def vendor_me(request: Request) -> Response:
             status=status.HTTP_404_NOT_FOUND,
         )
 
-    vendor = request.user.vendor_profile
+    # Force eager loading to avoid N+1
+    vendor = Vendor.objects.select_related("user").get(id=request.user.vendor_profile.id)
     return Response(
         VendorSerializer(vendor).data,
         status=status.HTTP_200_OK,
@@ -172,12 +173,11 @@ def create_listing(request: Request) -> Response:
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    # Check for existing listing with same idempotency key
-    existing = (
-        Listing.objects.filter(idempotency_key=idempotency_key)
-        .select_related("vendor", "school", "spec")
-        .first()
-    )
+    # Check for existing listing with same idempotency key (optimized)
+    existing = Listing.objects.filter(
+        idempotency_key=idempotency_key
+    ).select_related("vendor", "school", "spec__school").first()
+
     if existing:
         serializer = ListingSerializer(existing)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -189,6 +189,8 @@ def create_listing(request: Request) -> Response:
 
     try:
         listing = serializer.save(idempotency_key=idempotency_key)
+        # Reload with relations for response
+        listing = Listing.objects.select_related("vendor", "school", "spec__school").get(id=listing.id)
         response_serializer = ListingSerializer(listing)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
     except IntegrityError as e:
@@ -206,6 +208,6 @@ class VendorListingViewSet(viewsets.ReadOnlyModelViewSet[Listing]):
         vendor_id = self.kwargs.get("vendor_id")
         return (
             Listing.objects.filter(vendor_id=vendor_id)
-            .select_related("vendor", "school", "spec")
+            .select_related("vendor", "school", "spec__school")
             .order_by("-created_at")
         )

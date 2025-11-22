@@ -140,6 +140,9 @@ class Listing(models.Model):
             models.Index(
                 fields=["school", "spec", "enabled"], name="idx_listing_sch_spec_en"
             ),
+            models.Index(fields=["vendor", "enabled"], name="idx_listing_vendor_en"),
+            models.Index(fields=["enabled", "created_at"], name="idx_listing_en_created"),
+            models.Index(fields=["vendor", "school"], name="idx_listing_vendor_school"),
         ]
         constraints = []
 

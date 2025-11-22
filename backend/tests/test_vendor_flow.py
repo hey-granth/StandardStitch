@@ -12,20 +12,21 @@ from vendors.models import Vendor
 class VendorFlowTests(APITestCase):
     """Test vendor onboarding, approval, and permission flow"""
 
-    def setUp(self):
-        """Create test users"""
+    @classmethod
+    def setUpTestData(cls):
+        """Create shared test data once per test class"""
         # Parent user
-        self.parent_user = User.objects.create_user(
+        cls.parent_user = User.objects.create_user(
             email="parent@example.com", password="password123", role="parent"
         )
 
         # Ops user
-        self.ops_user = User.objects.create_user(
+        cls.ops_user = User.objects.create_user(
             email="ops@example.com", password="password123", role="ops", is_staff=True
         )
 
         # Another parent for testing
-        self.parent2_user = User.objects.create_user(
+        cls.parent2_user = User.objects.create_user(
             email="parent2@example.com", password="password123", role="parent"
         )
 

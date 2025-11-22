@@ -16,7 +16,7 @@ User = get_user_model()
 class CheckoutTests(APITestCase):
     @classmethod
     def setUpTestData(cls):
-        """Create shared test data"""
+        """Create shared test data once per test class"""
         cls.user = User.objects.create_user(
             email="buyer@example.com", password="password123", role="parent"
         )
@@ -54,8 +54,10 @@ class CheckoutTests(APITestCase):
         )
 
     def setUp(self):
-        """Per-test setup"""
+        """Per-test setup - only authenticate, clear cache"""
         self.client.force_authenticate(user=self.user)
+        from django.core.cache import cache
+        cache.clear()
 
     def test_add_cart_item(self):
         """Test adding item to cart"""

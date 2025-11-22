@@ -19,6 +19,9 @@ class Cart(models.Model):
     class Meta:
         db_table = "carts"
         ordering = ["-updated_at"]
+        indexes = [
+            models.Index(fields=["user", "-updated_at"], name="idx_cart_user_updated"),
+        ]
 
     def __str__(self) -> str:
         return f"Cart {self.id} - {self.user.email}"

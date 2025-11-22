@@ -13,13 +13,20 @@ from .serializers import SchoolSerializer
 
 
 class SchoolViewSet(viewsets.ReadOnlyModelViewSet[School]):
-    queryset = School.objects.all()
     serializer_class = SchoolSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_fields = ["city"]
     ordering_fields = ["name", "city", "created_at"]
     ordering = ["name"]
+
+    def get_queryset(self):
+        # Only load fields needed by serializer
+        return School.objects.only(
+            "id", "name", "city", "board",
+            "session_start", "session_end",
+            "is_active", "created_at", "updated_at"
+        )
 
     @method_decorator(cache_page(60 * 5))
     def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
