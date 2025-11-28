@@ -12,7 +12,10 @@ class UniformSpec(models.Model):
     school = models.ForeignKey(
         School, on_delete=models.CASCADE, related_name="uniform_specs"
     )
+    academic_year = models.CharField(max_length=20, help_text="e.g. 2025-2026")
+    description = models.TextField()
     item_type = models.CharField(max_length=100)
+    item_name = models.CharField(max_length=100)
     gender = models.CharField(max_length=20)
     season = models.CharField(max_length=50)
     fabric_gsm = models.IntegerField()

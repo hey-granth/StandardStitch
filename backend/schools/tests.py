@@ -20,16 +20,22 @@ class SchoolTests(APITestCase):
         # Create schools for multiple tests
         cls.school_a = School.objects.create(
             name="School A",
+            code="SCH-A",
             city="Mumbai",
+            address="123 Test St",
             board="CBSE",
+            academic_year="2025-2026",
             session_start=date(2025, 4, 1),
             session_end=date(2026, 3, 31),
         )
 
         cls.school_b = School.objects.create(
             name="School B",
+            code="SCH-B",
             city="Delhi",
+            address="456 Test Ave",
             board="ICSE",
+            academic_year="2025-2026",
             session_start=date(2025, 4, 1),
             session_end=date(2026, 3, 31),
         )
@@ -78,13 +84,19 @@ class SchoolTests(APITestCase):
         # Create additional schools to test ordering
         School.objects.create(
             name="Zebra School",
+            code="SCH-Z",
             city="Mumbai",
+            address="789 Test Blvd",
+            academic_year="2025-2026",
             session_start=date(2025, 4, 1),
             session_end=date(2026, 3, 31),
         )
         School.objects.create(
             name="Alpha School",
+            code="SCH-ALPHA",
             city="Mumbai",
+            address="101 Test Ln",
+            academic_year="2025-2026",
             session_start=date(2025, 4, 1),
             session_end=date(2026, 3, 31),
         )

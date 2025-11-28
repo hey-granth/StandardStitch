@@ -23,14 +23,20 @@ class CheckoutTests(APITestCase):
 
         cls.school = School.objects.create(
             name="Test School",
+            code="SCH-001",
             city="Mumbai",
+            address="123 Test St",
+            academic_year="2025-2026",
             session_start=date(2025, 4, 1),
             session_end=date(2026, 3, 31),
         )
 
         cls.spec = UniformSpec.objects.create(
             school=cls.school,
+            academic_year="2025-2026",
+            description="Test Description",
             item_type="shirt",
+            item_name="Test Shirt",
             gender="boys",
             season="summer",
             fabric_gsm=180,

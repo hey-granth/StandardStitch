@@ -225,3 +225,14 @@ def payment_webhook(request: Request) -> Response:
         },
         status=status.HTTP_200_OK,
     )
+
+
+from .serializers import OrderSerializer
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def list_orders(request: Request) -> Response:
+    """List user's orders"""
+    orders = Order.objects.filter(user=request.user).order_by("-created_at")
+    serializer = OrderSerializer(orders, many=True)
+    return Response(serializer.data)

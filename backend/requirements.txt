@@ -35,3 +35,4 @@ testcontainers==4.13.3
 typing-extensions==4.15.0
 urllib3==2.5.0
 wrapt==2.0.1
+django-cors-headers==4.9.0

@@ -20,7 +20,10 @@ class CatalogTests(APITestCase):
 
         cls.school = School.objects.create(
             name="Test School",
+            code="SCH-001",
             city="Mumbai",
+            address="123 Test St",
+            academic_year="2025-2026",
             session_start=date(2025, 4, 1),
             session_end=date(2026, 3, 31),
         )
@@ -28,7 +31,10 @@ class CatalogTests(APITestCase):
         # Create specs for multiple tests
         cls.spec_shirt_boys = UniformSpec.objects.create(
             school=cls.school,
+            academic_year="2025-2026",
+            description="Test Description",
             item_type="shirt",
+            item_name="Test Shirt",
             gender="boys",
             season="summer",
             fabric_gsm=180,
@@ -39,7 +45,10 @@ class CatalogTests(APITestCase):
 
         cls.spec_pants = UniformSpec.objects.create(
             school=cls.school,
+            academic_year="2025-2026",
+            description="Test Description",
             item_type="pants",
+            item_name="Test Pants",
             gender="boys",
             season="summer",
             fabric_gsm=220,
@@ -50,7 +59,10 @@ class CatalogTests(APITestCase):
 
         cls.spec_shirt_girls = UniformSpec.objects.create(
             school=cls.school,
+            academic_year="2025-2026",
+            description="Test Description",
             item_type="shirt",
+            item_name="Test Shirt",
             gender="girls",
             season="summer",
             fabric_gsm=180,

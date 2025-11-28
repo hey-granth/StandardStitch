@@ -28,8 +28,11 @@ class OrderLifecycleIntegrationTest(TestCase):
         # Create school
         cls.school = School.objects.create(
             name="Test School",
+            code="SCH-001",
             city="Mumbai",
+            address="123 Test St",
             board="CBSE",
+            academic_year="2025-2026",
             session_start=date.today(),
             session_end=date.today() + timedelta(days=365),
             is_active=True,
@@ -60,7 +63,10 @@ class OrderLifecycleIntegrationTest(TestCase):
         # Create uniform spec
         cls.spec = UniformSpec.objects.create(
             school=cls.school,
+            academic_year="2025-2026",
+            description="Test Description",
             item_type="Shirt",
+            item_name="Test Shirt",
             gender="Male",
             season="Summer",
             fabric_gsm=150,
